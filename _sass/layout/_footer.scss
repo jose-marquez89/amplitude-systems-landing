@@ -7,6 +7,8 @@
 /* Footer */
 
 	#footer {
+		padding-top: 0.5em;
+
 		.copyright {
 			font-size: 0.8em;
 			list-style: none;
@@ -14,7 +16,7 @@
 
 			li {
 				border-left: solid 1px _palette(border);
-				color: _palette(fg-light);
+				color: rgba(_palette(fg-bold), 0.66);
 				display: inline-block;
 				line-height: 1;
 				margin-left: 1em;

@@ -7,7 +7,7 @@
 /* Main */
 
 	#main {
-		background-color: _palette(bg-alt);
+		background: linear-gradient(180deg, rgba(_palette(bg-alt), 0.9), rgba(_palette(bg), 0.92));
 
 		> * {
 			border-top: solid 1px _palette(border);
