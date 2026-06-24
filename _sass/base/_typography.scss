@@ -9,10 +9,10 @@
 	body, input, select, textarea {
 		color: _palette(fg);
 		font-family: _font(family);
-		font-size: 17pt;
+		font-size: 16.5pt;
 		font-weight: _font(weight);
 		letter-spacing: _font(letter-spacing);
-		line-height: 1.65;
+		line-height: 1.7;
 
 		@include breakpoint(xlarge) {
 			font-size: 14pt;
@@ -30,14 +30,20 @@
 	a {
 		@include vendor('transition', (
 			'color #{_duration(transition)} ease-in-out',
-			'border-bottom-color #{_duration(transition)} ease-in-out'
+			'border-bottom-color #{_duration(transition)} ease-in-out',
+			'background-size #{_duration(transition)} ease-in-out'
 		));
-		border-bottom: dotted 1px;
+		border-bottom: solid 1px rgba(_palette(fg-bold), 0.35);
+		background-image: linear-gradient(_palette(highlight), _palette(highlight));
+		background-position: 0 100%;
+		background-repeat: no-repeat;
+		background-size: 0 2px;
 		color: inherit;
 		text-decoration: none;
 
 		&:hover {
 			border-bottom-color: transparent;
+			background-size: 100% 2px;
 			color: _palette(highlight) !important;
 		}
 
@@ -65,8 +71,10 @@
 
 	h1, h2, h3, h4, h5, h6 {
 		color: _palette(fg-bold);
+		font-family: _font(family-heading);
 		font-weight: _font(weight-bold);
-		line-height: 1.65;
+		line-height: 1.25;
+		letter-spacing: 0.01em;
 		margin: 0 0 (_size(element-margin) * 0.5) 0;
 
 		a {
@@ -76,15 +84,15 @@
 	}
 
 	h1 {
-		font-size: 2.5em;
+		font-size: 2.8em;
 	}
 
 	h2 {
-		font-size: 1.75em;
+		font-size: 1.95em;
 	}
 
 	h3 {
-		font-size: 1.35em;
+		font-size: 1.45em;
 	}
 
 	h4 {
@@ -101,11 +109,11 @@
 
 	@include breakpoint(small) {
 		h1 {
-			font-size: 2em;
+			font-size: 2.2em;
 		}
 
 		h2 {
-			font-size: 1.5em;
+			font-size: 1.7em;
 		}
 
 		h3 {

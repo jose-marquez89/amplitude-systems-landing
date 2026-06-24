@@ -6,3 +6,4 @@ Gemfile.lock
 *.gem
 .jekyll-cache
 .DS_Store
+.ruby-version

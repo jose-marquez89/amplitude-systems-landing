@@ -6,9 +6,21 @@
 
 /* Tiles */
 
+	$tiles-gutter: 1em;
+	$tile-tone-1: #0ea5e9;
+	$tile-tone-2: #14b8a6;
+	$tile-tone-3: #4f46e5;
+	$tile-tone-4: #ca8a04;
+	$tile-tone-5: #16a34a;
+	$tile-tone-6: #e11d48;
+
 	.tiles {
 		@include vendor('display', 'flex');
 		@include vendor('flex-wrap', 'wrap');
+		gap: 0.7em;
+		padding: 0.7em;
+		background: linear-gradient(160deg, rgba(_palette(fg-bold), 0.04), rgba(_palette(highlight), 0.06));
+		border-radius: 10px;
 		border-top: 0 !important;
 
 		& + * {
@@ -24,17 +36,19 @@
 				'filter 1s ease',
 				'-webkit-filter 1s ease'
 			));
-			@include padding(4em, 4em);
+			@include padding(1.8em, 1.8em);
 			background-position: center;
 			background-repeat: no-repeat;
 			background-size: cover;
+			border-radius: 8px;
+			box-shadow: 0 18px 34px rgba(0, 0, 0, 0.2);
 			cursor: default;
 			height: 40vh;
 			max-height: 40em;
 			min-height: 23em;
 			overflow: hidden;
 			position: relative;
-			width: 40%;
+			width: calc(40% - 0.35em);
 
 			.image {
 				display: none;
@@ -43,10 +57,24 @@
 			header {
 				position: relative;
 				z-index: 3;
+				max-width: 92%;
+
+				&.major {
+					> :first-child {
+						&:after {
+							background: linear-gradient(90deg, rgba(_palette(fg-bold), 0.98), rgba(_palette(highlight), 0.92));
+							height: 4px;
+							width: 72%;
+							box-shadow: 0 2px 12px rgba(0, 0, 0, 0.42);
+						}
+					}
+				}
 			}
 
 			h3 {
 				font-size: 1.75em;
+				color: _palette(fg-bold);
+				text-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
 
 				a {
 					&:hover {
@@ -72,14 +100,14 @@
 				display: block;
 				height: 100%;
 				left: 0;
-				opacity: 0.85;
+				opacity: 0.8;
 				position: absolute;
 				width: 100%;
 				z-index: 2;
 			}
 
 			&:after {
-				background-color: transparentize(_palette(bg), 0.75);
+				background: linear-gradient(170deg, transparentize(_palette(bg), 0.78), transparentize(_palette(bg), 0.22));
 				content: '';
 				display: block;
 				height: 100%;
@@ -91,8 +119,11 @@
 			}
 
 			&:hover {
+				@include vendor('transform', 'translateY(-3px)');
+				box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24);
+
 				&:before {
-					opacity: 0;
+					opacity: 0.62;
 				}
 			}
 
@@ -107,46 +138,52 @@
 				flex: 1 auto;
 			}
 
+			@for $i from 1 through 10 {
+				&:nth-child(#{$i}) {
+					transition-delay: #{0.06s * $i};
+				}
+			}
+
 			&:nth-child(6n - 5) {
 				&:before {
-					background-color: _palette(accent1);
+					background: linear-gradient(140deg, $tile-tone-1, mix($tile-tone-1, $tile-tone-3, 60%));
 				}
 			}
 
 			&:nth-child(6n - 4) {
 				&:before {
-					background-color: _palette(accent2);
+					background: linear-gradient(140deg, $tile-tone-2, mix($tile-tone-2, $tile-tone-1, 54%));
 				}
 			}
 
 			&:nth-child(6n - 3) {
 				&:before {
-					background-color: _palette(accent3);
+					background: linear-gradient(140deg, $tile-tone-3, mix($tile-tone-3, $tile-tone-1, 56%));
 				}
 			}
 
 			&:nth-child(6n - 2) {
 				&:before {
-					background-color: _palette(accent4);
+					background: linear-gradient(140deg, $tile-tone-4, mix($tile-tone-4, $tile-tone-1, 46%));
 				}
 			}
 
 			&:nth-child(6n - 1) {
 				&:before {
-					background-color: _palette(accent5);
+					background: linear-gradient(140deg, $tile-tone-5, mix($tile-tone-5, $tile-tone-2, 58%));
 				}
 			}
 
 			&:nth-child(6n) {
 				&:before {
-					background-color: _palette(accent6);
+					background: linear-gradient(140deg, $tile-tone-6, mix($tile-tone-6, $tile-tone-3, 50%));
 				}
 			}
 		}
 
 		@include breakpoint(large) {
 			article {
-				@include padding(4em, 3em);
+				@include padding(1.5em, 1.5em);
 				height: 30vh;
 				max-height: 30em;
 				min-height: 20em;
@@ -155,13 +192,13 @@
 
 		@include breakpoint(medium) {
 			article {
-				width: 50% !important;
+				width: calc(50% - 0.35em) !important;
 			}
 		}
 
 		@include breakpoint(small) {
 			article {
-				@include padding(3em, 1.5em);
+				@include padding(1.15em, 0.95em);
 				height: 16em;
 				max-height: none;
 				min-height: 0;
@@ -174,10 +211,17 @@
 
 		@include breakpoint(xsmall) {
 			display: block;
+			padding: 0.5em;
+			gap: 0;
 
 			article {
 				height: 20em;
+				margin-bottom: 1em;
 				width: 100% !important;
+
+				&:last-child {
+					margin-bottom: 0;
+				}
 			}
 		}
 	}

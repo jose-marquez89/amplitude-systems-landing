@@ -27,20 +27,22 @@
 
 				  &:after {
 					    content: '';
-					    background-color: _palette(fg-bold);
+					    background: linear-gradient(90deg, _palette(highlight), _palette(accent1));
 					    display: block;
-					    height: 2px;
+					    height: 3px;
+					    border-radius: 999px;
 					    margin: 0.325em 0 0.5em 0;
-					    width: 100%;
+					    width: 85%;
 				  }
 			}
 
 			> p {
-				font-size: 0.7em;
+				font-size: 0.73em;
 				font-weight: _font(weight-bold);
 				letter-spacing: _font(letter-spacing-alt);
 				margin-bottom: 0;
 				text-transform: uppercase;
+				color: rgba(_palette(fg-bold), 0.9);
 			}
 
 			body.is-ie & {

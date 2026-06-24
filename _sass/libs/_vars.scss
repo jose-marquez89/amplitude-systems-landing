@@ -6,13 +6,13 @@
 // Duration.
 	$duration: (
 		menu:				0.35s,
-		transition:			0.2s,
+		transition:			0.25s,
 		banner:				2.5s
 	);
 
 // Size.
 	$size: (
-		border-radius:		4px,
+		border-radius:		14px,
 		element-height:		2.75em,
 		element-margin:		2em,
 		inner:				65em
@@ -20,28 +20,29 @@
 
 // Font.
 	$font: (
-		family:				('Source Sans Pro', Helvetica, sans-serif),
+		family:				('Manrope', 'Segoe UI', sans-serif),
+		family-heading:		('Space Grotesk', 'Avenir Next', sans-serif),
 		family-fixed:		('Courier New', monospace),
-		weight:				300,
-		weight-bold:		600,
-		letter-spacing:		0.025em,
-		letter-spacing-alt:	0.25em
+		weight:				400,
+		weight-bold:		700,
+		letter-spacing:		0.015em,
+		letter-spacing-alt:	0.12em
 	);
 
 // Palette.
 	$palette: (
-		bg:					#242943,
-		bg-alt:				#2a2f4a,
-		fg:					#ffffff,
-		fg-bold:			#ffffff,
-		fg-light:			rgba(244,244,255,0.2),
-		border:				rgba(212,212,255,0.1),
-		border-bg:			rgba(212,212,255,0.035),
-		highlight:			#9bf1ff,
-		accent1:			#6fc3df,
-		accent2:			#8d82c4,
-		accent3:			#ec8d81,
-		accent4:			#e7b788,
-		accent5:			#8ea9e8,
-		accent6:			#87c5a4
+		bg:					#111417,
+		bg-alt:				#171b20,
+		fg:					#a5b0bf,
+		fg-bold:			#eef2f7,
+		fg-light:			rgba(165,176,191,0.64),
+		border:				rgba(42,49,59,0.9),
+		border-bg:			rgba(29,35,42,0.75),
+		highlight:			#22d3ee,
+		accent1:			#2563eb,
+		accent2:			#3b82f6,
+		accent3:			#0f766e,
+		accent4:			#0ea5a4,
+		accent5:			#4338ca,
+		accent6:			#475569
 	);
