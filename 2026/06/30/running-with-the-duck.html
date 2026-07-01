@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<!--
+	Forty by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+
+<head>
+	<title>Lightweight Data Transformations in Fabric: A duckrun Demo | Amplitude Systems</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<!--[if lte IE 8]><script src="/assets/js/ie/html5shiv.js"></script><![endif]-->
+	<link rel="stylesheet" href="/assets/css/main.css" />
+	<!--[if lte IE 9]><link rel="stylesheet" href="/assets/css/ie9.css" /><![endif]-->
+	<!--[if lte IE 8]><link rel="stylesheet" href="/assets/css/ie8.css" /><![endif]-->
+</head>
+
+
+<body>
+
+    <!-- Wrapper -->
+<div id="wrapper">
+
+<!-- Header -->
+<header id="header">
+	<a href="/" class="logo">
+		<img src="/assets/svg/amplitude_systems_logo.svg" 
+			 alt="Amplitude Systems" >
+	  </a>
+	<nav>
+		<a href="#menu">Menu</a>
+	</nav>
+</header>
+
+<!-- Menu -->
+<nav id="menu">
+	<ul class="links">
+        
+		    
+		
+		    
+		
+		    
+		
+		    
+		        <li><a href="/">Home</a></li>
+	    	
+		
+		    
+		
+		
+		    
+		
+		    
+		        <li><a href="/about_us.html">About Us</a></li>
+		    
+		
+		    
+		        <li><a href="/blog.html">Blog</a></li>
+		    
+		
+		    
+		
+	</ul>
+	<ul class="actions vertical">
+		<li><a href="#contact" class="button fit">Contact Us</a></li>
+	</ul>
+</nav>
+ 
+    
+    
+<!-- Main -->
+<div id="main" class="alt">
+
+<!-- One -->
+<section id="one">
+	<div class="inner">
+		<header class="major">
+			<h1>Lightweight Data Transformations in Fabric: A duckrun Demo</h1>
+			<p class="post-meta">Jose Marquez | June 30, 2026</p>
+		</header>
+		<span class="image main"><img src="/assets/images/blog-post-images/duckrun-demo/duckrunning.jpg" alt="" /></span>
+		<p>Are your tables in OneLake in the billions of rows? If not, Spark might be a hammer that’s too big for your nails. For focused datasets that aren’t mission-critical, single-process tools like <a href="https://duckdb.org/">DuckDB</a> can deliver the same value while using just a sliver of capacity—especially valuable when your warehouse or SQL endpoints are already heavily utilized.</p>
+
+<p>In this post, we’ll explore transforming a NYC Open Data collisions data set using <a href="https://github.com/djouallah/duckrun">duckrun</a>, which simplifies the orchestration, testing, and documentation of delta lake tables in Fabric (kudos to <a href="https://datamonkeysite.com/about/">Mimoune Djouallah</a> for building it).</p>
+
+<p>Currently, <code class="language-plaintext highlighter-rouge">duckrun</code> functions as both a Fabric notebook utility for reading and writing delta tables with DuckDB SQL <em>and</em> a <a href="https://www.getdbt.com/">dbt</a> adapter. This post focuses on the latter—how to use it as a single-process transformation tool that applies software development best practices to your data work.</p>
+
+<blockquote>
+  <p><strong>Disclaimer</strong>: <code class="language-plaintext highlighter-rouge">duckrun</code> is an open-source library with only one maintainer; it makes no guarantees and is explicit about this. While its utility is clear and value can be high, you should approach its use with caution and avoid applying it in production scenarios, or at least ones that are mission critical. If you <em>do</em> use it, plan to test, test, test and ensure you have other options at the ready.</p>
+</blockquote>
+
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before getting started, you’ll need a few things in addition to an empty Fabric workspace:</p>
+
+<ul>
+  <li><a href="https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10#get-azcopy"><code class="language-plaintext highlighter-rouge">azcopy</code></a> to sync your dbt code into OneLake (or simply upload directly via the lakehouse UI)</li>
+  <li>An Azure DevOps or GitHub account to connect to your Fabric workspace</li>
+</ul>
+
+<p>The complete code for this walkthrough is available in this <a href="https://github.com/jose-marquez89/fabric-duckrun-demo">GitHub repo</a>. Clone it and update the workspace and lakehouse GUIDs to match your environment:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/lakehouse_guids.png" alt="Notebook image of GUID variables" /></p>
+
+<h3 id="understanding-dbt-structure">Understanding dbt Structure</h3>
+
+<p>Since <code class="language-plaintext highlighter-rouge">duckrun</code> wraps <code class="language-plaintext highlighter-rouge">dbt-duckdb</code>, your project follows standard dbt conventions: SQL files organized in a directory structure and contextualized with YAML configuration. Unlike notebook-based transformations, dbt projects keep code modular and well-organized.</p>
+
+<p>The tree structure below shows a typical dbt project structure. The key directories are:</p>
+
+<ul>
+  <li><strong>macros</strong>: Reusable SQL snippets you want to repeat across your project</li>
+  <li><strong>models</strong>: Your transformation SQL files, organized into layers:
+    <ul>
+      <li><strong>staging</strong>: Initial transformations on raw data (can have subdirectories like <code class="language-plaintext highlighter-rouge">bronze</code>)</li>
+      <li><strong>intermediate</strong>: Views or materialized tables used by downstream models</li>
+      <li><strong>marts</strong>: Final business logic tables</li>
+    </ul>
+  </li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>├── macros
+│   ├── create_int_sk.sql
+│   └── generate_schema_name.sql
+├── models
+│   ├── intermediate
+│   │   ├── collision_reason.sql
+│   │   ├── collision_vehicle_type.sql
+│   │   └── schema.yml
+│   ├── marts
+│   │   ├── bridge_reason.sql
+│   │   ├── bridge_vehicle_type.sql
+│   │   ├── dim_date.sql
+│   │   ├── dim_location.sql
+│   │   ├── dim_reason.sql
+│   │   ├── dim_vehicle_type.sql
+│   │   ├── fact_collision.sql
+│   │   └── schema.yml
+│   └── staging
+│       ├── bronze
+│       │   └── collisions.sql
+│       └── schema.yml
+├── dbt_project.yml
+└── profiles.yml
+</code></pre></div></div>
+
+<h4 id="configuration-files">Configuration Files</h4>
+
+<p>The three critical YAML files are:</p>
+
+<ul>
+  <li>
+    <p><strong>profiles.yml</strong>: Tells <code class="language-plaintext highlighter-rouge">duckrun</code> where to write your model outputs. Use environment variables for flexible multi-environment deployments:</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">collisions_warehouse</span><span class="pi">:</span>
+  <span class="na">target</span><span class="pi">:</span> <span class="s">dev</span>
+  <span class="na">outputs</span><span class="pi">:</span>
+    <span class="na">dev</span><span class="pi">:</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">duckrun</span>
+      <span class="na">schema</span><span class="pi">:</span> <span class="s">cdw</span>
+      <span class="na">root_path</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">env_var('TARGET_LH_PATH')</span><span class="nv"> </span><span class="s">}}/Tables"</span>
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>dbt_project.yml</strong>: Determines which profile to use and sets configuration like schema names for each modeling layer</p>
+  </li>
+  <li>
+    <p><strong>schema.yml</strong>: Defines data sources, tests, and documentation for your models. Here’s how to reference external data in your lakehouse:</p>
+
+    <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">sources</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">bronze_lakehouse</span>
+    <span class="na">description</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Raw</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">NYC</span><span class="nv"> </span><span class="s">Open</span><span class="nv"> </span><span class="s">Data</span><span class="nv"> </span><span class="s">collisions</span><span class="nv"> </span><span class="s">dataset"</span>
+    <span class="na">tables</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">collisions</span>
+        <span class="na">description</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Raw</span><span class="nv"> </span><span class="s">collisions</span><span class="nv"> </span><span class="s">table.</span><span class="nv"> </span><span class="s">Staging</span><span class="nv"> </span><span class="s">normalizes</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">documents</span><span class="nv"> </span><span class="s">columns."</span>
+        <span class="na">meta</span><span class="pi">:</span>
+          <span class="na">plugin</span><span class="pi">:</span> <span class="s">duckrun</span>
+          <span class="na">format</span><span class="pi">:</span> <span class="s">csv</span>
+          <span class="na">location</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">env_var('TARGET_LH_PATH')</span><span class="nv"> </span><span class="s">}}/Files/nyc-open-data/collisions.csv"</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<h4 id="writing-your-transformations">Writing Your Transformations</h4>
+
+<p>Your SQL transformations use DuckDB SQL with Jinja templating to manage dependencies. The <code class="language-plaintext highlighter-rouge">source()</code> and <code class="language-plaintext highlighter-rouge">ref()</code> functions link to your defined sources and upstream models:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- You don't need the schema config in every model, unless you want a custom schema name</span>
+<span class="c1">-- This is handled by the macro in the macros directory</span>
+
+<span class="p">{{</span> <span class="n">config</span><span class="p">(</span><span class="k">schema</span><span class="o">=</span><span class="s1">'staging'</span><span class="p">)</span> <span class="p">}}</span>
+
+<span class="c1">-- silver query</span>
+<span class="k">SELECT</span>
+  <span class="nv">"CRASH DATE"</span> <span class="k">AS</span> <span class="n">crash_date</span><span class="p">,</span>
+  <span class="k">CAST</span><span class="p">(</span><span class="nv">"CRASH TIME"</span> <span class="k">AS</span> <span class="nb">VARCHAR</span><span class="p">)</span> <span class="k">AS</span> <span class="n">crash_time</span><span class="p">,</span>
+  <span class="k">CAST</span><span class="p">(</span><span class="nv">"CRASH DATE"</span> <span class="o">+</span> <span class="nv">"CRASH TIME"</span> <span class="k">AS</span> <span class="n">TIMESTAMPTZ</span><span class="p">)</span> <span class="k">AS</span> <span class="n">crash_timestamp</span><span class="p">,</span>
+  <span class="k">CAST</span><span class="p">(</span><span class="n">LATITUDE</span> <span class="k">AS</span> <span class="nb">DECIMAL</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span> <span class="k">AS</span> <span class="n">latitude</span><span class="p">,</span>
+  <span class="k">CAST</span><span class="p">(</span><span class="n">LONGITUDE</span> <span class="k">AS</span> <span class="nb">DECIMAL</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">6</span><span class="p">))</span> <span class="k">AS</span> <span class="n">longitude</span><span class="p">,</span>
+  <span class="k">LOCATION</span> <span class="k">AS</span> <span class="k">location</span><span class="p">,</span>
+  <span class="n">BOROUGH</span> <span class="k">AS</span> <span class="n">borough</span><span class="p">,</span>
+  <span class="n">IFNULL</span><span class="p">(</span><span class="k">UPPER</span><span class="p">(</span><span class="nv">"ON STREET NAME"</span><span class="p">),</span><span class="s1">'STREET UNKNOWN'</span><span class="p">)</span> <span class="k">AS</span> <span class="n">on_street_name</span><span class="p">,</span>
+  <span class="n">IFNULL</span><span class="p">(</span><span class="k">UPPER</span><span class="p">(</span><span class="nv">"CROSS STREET NAME"</span><span class="p">),</span><span class="s1">'CROSS STREET UNKNOWN'</span><span class="p">)</span> <span class="k">AS</span> <span class="n">cross_street_name</span><span class="p">,</span>
+  <span class="n">IFNULL</span><span class="p">(</span><span class="k">UPPER</span><span class="p">(</span><span class="nv">"OFF STREET NAME"</span><span class="p">),</span><span class="s1">'OFF STREET UNKNOWN'</span><span class="p">)</span> <span class="k">AS</span> <span class="n">off_street_name</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF PERSONS INJURED"</span> <span class="k">AS</span> <span class="n">number_of_persons_injured</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF PERSONS KILLED"</span> <span class="k">AS</span> <span class="n">number_of_persons_killed</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF PEDESTRIANS INJURED"</span> <span class="k">AS</span> <span class="n">number_of_pedestrians_injured</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF PEDESTRIANS KILLED"</span> <span class="k">AS</span> <span class="n">number_of_pedestrians_killed</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF CYCLIST INJURED"</span> <span class="k">AS</span> <span class="n">number_of_cyclist_injured</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF CYCLIST KILLED"</span> <span class="k">AS</span> <span class="n">number_of_cyclist_killed</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF MOTORIST INJURED"</span> <span class="k">AS</span> <span class="n">number_of_motorist_injured</span><span class="p">,</span>
+  <span class="nv">"NUMBER OF MOTORIST KILLED"</span> <span class="k">AS</span> <span class="n">number_of_motorist_killed</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"CONTRIBUTING FACTOR VEHICLE 1"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">contributing_factor_vehicle_1</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"CONTRIBUTING FACTOR VEHICLE 2"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">contributing_factor_vehicle_2</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"CONTRIBUTING FACTOR VEHICLE 3"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">contributing_factor_vehicle_3</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"CONTRIBUTING FACTOR VEHICLE 4"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">contributing_factor_vehicle_4</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"CONTRIBUTING FACTOR VEHICLE 5"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">contributing_factor_vehicle_5</span><span class="p">,</span>
+  <span class="n">COLLISION_ID</span> <span class="k">AS</span> <span class="n">collision_id</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"VEHICLE TYPE CODE 1"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">vehicle_type_code_1</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"VEHICLE TYPE CODE 2"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">vehicle_type_code_2</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"VEHICLE TYPE CODE 3"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">vehicle_type_code_3</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"VEHICLE TYPE CODE 4"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">vehicle_type_code_4</span><span class="p">,</span>
+  <span class="k">UPPER</span><span class="p">(</span><span class="nv">"VEHICLE TYPE CODE 5"</span><span class="p">)</span> <span class="k">AS</span> <span class="n">vehicle_type_code_5</span>
+<span class="k">FROM</span> <span class="p">{{</span> <span class="k">source</span><span class="p">(</span><span class="s1">'bronze_lakehouse'</span><span class="p">,</span> <span class="s1">'collisions'</span><span class="p">)</span> <span class="p">}};</span>
+</code></pre></div></div>
+
+<h3 id="deploying-your-dbt-project-to-fabric">Deploying Your dbt Project to Fabric</h3>
+<p>With your dbt project properly structured, copy it to the files section of your lakehouse. I prefer <code class="language-plaintext highlighter-rouge">azcopy sync</code> for iterative development:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">DBT_LAKEHOUSE_URL</span><span class="o">=</span><span class="s2">"https://onelake.dfs.fabric.microsoft.com/</span><span class="nv">$DUCKRUN_WORKSPACE_ID</span><span class="s2">/</span><span class="nv">$DUCKRUN_LH_ID</span><span class="s2">/Files/dbt"</span>
+
+azcopy <span class="nb">sync</span> <span class="s2">"./dbt"</span> <span class="s2">"</span><span class="nv">$DBT_LAKEHOUSE_URL</span><span class="s2">"</span> <span class="se">\</span>
+    <span class="nt">--recursive</span><span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+    <span class="nt">--delete-destination</span><span class="o">=</span><span class="nb">true</span> <span class="se">\</span>
+    <span class="nt">--trusted-microsoft-suffixes</span> <span class="s2">"fabric.microsoft.com"</span>
+</code></pre></div></div>
+
+<p>Your dbt directory is now ready to be accessed from a Fabric notebook:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/dbt_in_duckrun_lakehouse.png" alt="A copied dbt directory in OneLake" /></p>
+
+<h3 id="running-dbt-from-your-fabric-notebook">Running dbt from Your Fabric Notebook</h3>
+
+<p>Your Fabric notebook acts as a simple orchestrator. It needs to:</p>
+
+<ol>
+  <li>Install <code class="language-plaintext highlighter-rouge">duckrun</code></li>
+  <li>Execute your dbt project</li>
+  <li>Report success or failure</li>
+  <li>Generate documentation</li>
+</ol>
+
+<p>Install <code class="language-plaintext highlighter-rouge">duckrun</code> and restart the kernel:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">q</span> <span class="n">duckrun</span> <span class="o">--</span><span class="n">upgrade</span>
+<span class="n">notebookutils</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="nf">restartPython</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Then run your dbt project:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">os</span>
+<span class="kn">from</span> <span class="n">dbt.cli.main</span> <span class="kn">import</span> <span class="n">dbtRunner</span><span class="p">,</span> <span class="n">dbtRunnerResult</span>
+
+<span class="n">workspace</span> <span class="o">=</span> <span class="sh">"</span><span class="s">&lt;your-workspace-id&gt;</span><span class="sh">"</span>
+<span class="n">lh_art_id</span> <span class="o">=</span> <span class="sh">"</span><span class="s">&lt;your-lakehouse-artifact-id&gt;</span><span class="sh">"</span>
+<span class="n">os</span><span class="p">.</span><span class="n">environ</span><span class="p">[</span><span class="sh">"</span><span class="s">TARGET_LH_PATH</span><span class="sh">"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="sh">"</span><span class="s">abfss://</span><span class="si">{</span><span class="n">workspace</span><span class="si">}</span><span class="s">@onelake.dfs.fabric.microsoft.com/</span><span class="si">{</span><span class="n">lh_art_id</span><span class="si">}</span><span class="sh">"</span>
+<span class="n">dbt_project_dir</span> <span class="o">=</span> <span class="sh">"</span><span class="s">/lakehouse/default/Files/dbt</span><span class="sh">"</span>
+
+<span class="n">dbt</span> <span class="o">=</span> <span class="nf">dbtRunner</span><span class="p">()</span>
+
+<span class="n">cli_args</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="sh">"</span><span class="s">build</span><span class="sh">"</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">--project-dir</span><span class="sh">"</span><span class="p">,</span> <span class="n">dbt_project_dir</span><span class="p">,</span>
+    <span class="sh">"</span><span class="s">--profiles-dir</span><span class="sh">"</span><span class="p">,</span> <span class="n">dbt_project_dir</span>
+<span class="p">]</span>
+
+<span class="n">res</span><span class="p">:</span> <span class="n">dbtRunnerResult</span> <span class="o">=</span> <span class="n">dbt</span><span class="p">.</span><span class="nf">invoke</span><span class="p">(</span><span class="n">cli_args</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">res</span><span class="p">.</span><span class="n">result</span><span class="p">:</span>
+    <span class="nf">print</span><span class="p">(</span><span class="sa">f</span><span class="sh">"</span><span class="si">{</span><span class="n">r</span><span class="p">.</span><span class="n">node</span><span class="p">.</span><span class="n">name</span><span class="si">}</span><span class="s">: </span><span class="si">{</span><span class="n">r</span><span class="p">.</span><span class="n">status</span><span class="si">}</span><span class="sh">"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>With everything configured correctly and no SQL or test errors, your run completes successfully:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/successful_duckrun.jpg" alt="A successful duckrun" /></p>
+
+<p>Your tables are now organized into the schemas you specified, ready for downstream analytics:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/duckrun_schema_tables.png" alt="Tables landed in lakehouse by duckrun" /></p>
+
+<p>The file at <code class="language-plaintext highlighter-rouge">dbt/target/static_index.html</code> will be created, where you can access a lineage graph from within the dbt documentation interface:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/dbt_lineage_graph.png" alt="dbt lineage graph" /></p>
+
+<p>Load these into a semantic model and visualize with your favorite BI tool:</p>
+
+<p><img src="/assets/images/blog-post-images/duckrun-demo/collisions_dashboard.jpg" alt="A simple Power BI dashboard for collision data" /></p>
+
+<h3 id="wrapping-up">Wrapping Up</h3>
+
+<p><code class="language-plaintext highlighter-rouge">duckrun</code> brings a mature feature set to a Fabric-specific need: transforming data with DuckDB SQL and materializing results as delta tables. You get organization, testing, tracing, and documentation that notebooks alone can’t provide.</p>
+
+<p>If a simple query plus <code class="language-plaintext highlighter-rouge">write_deltalake()</code> works for your use case, you probably don’t need <code class="language-plaintext highlighter-rouge">duckrun</code>. However, for moderately complex transformations that warrant more structure, it’s worth having in your toolkit.</p>
+
+	</div>
+</section>
+
+</div>
+
+    <!-- Contact -->
+<section id="contact">
+	<div class="inner">
+		<section>
+			<form action="https://formspree.io/f/mvzbeaek" method="POST">
+				<div class="field half first">
+					<label for="name">Name</label>
+					<input type="text" name="name" id="name" />
+				</div>
+				<div class="field half">
+					<label for="email">Email</label>
+					<input type="email" name="email" id="email" />
+				</div>
+				<div class="field">
+					<label for="message">Message</label>
+					<textarea name="message" id="message" rows="6"></textarea>
+				</div>
+				<ul class="actions">
+					<li><input type="submit" value="Send Message" class="special" /></li>
+					<li><input type="reset" value="Clear" /></li>
+				</ul>
+			</form>
+		</section>
+		<section class="split">
+			<section>
+				<div class="contact-method">
+					<span class="icon alt fa-envelope"></span>
+					<h3>Email</h3>
+					<a href="mailto:contact@goamplitude.com">contact@goamplitude.com</a>
+				</div>
+			</section>
+			<section>
+				<div class="contact-method">
+					<span class="icon alt fa-phone"></span>
+					<h3>Phone</h3>
+					<a href="tel:(512) 631-5123">(512) 631-5123</a>
+				</div>
+			</section>
+			<section>
+				<div class="contact-method">
+					<span class="icon alt fa-home"></span>
+					<h3>Address</h3>
+					<span>
+					
+					    5900 Balcones Drive<br />
+					
+					
+					    Austin,
+					
+					
+					    TX 
+					
+					
+					    78731<br />
+					
+					
+					    United States of America
+					
+					</span>
+				</div>
+			</section>
+		</section>
+	</div>
+</section>
+
+<!-- Footer -->
+	<footer id="footer">
+		<div class="inner">
+			<ul class="icons">
+				
+					
+						<li>
+							<a href="https://github.com/jose-marquez89" class="icon alt fa-github" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+								<span class="label">GitHub</span>
+							</a>
+						</li>
+					
+				
+					
+						<li>
+							<a href="https://www.linkedin.com/in/jose-marquez89" class="icon alt fa-linkedin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+								<span class="label">LinkedIn</span>
+							</a>
+						</li>
+					
+				
+			</ul>
+			<ul class="copyright">
+				<li>&copy; Amplitude Systems </li>
+				<li>Design: <a href="https://html5up.net" target="_blank">HTML5 UP</a></li>
+				<li>Jekyll integration: <a href="https://github.com/andrewbanchich" target="_blank">Andrew Banchich</a></li>
+
+			</ul>
+		</div>
+	</footer>
+
+</div>
+
+<!-- Scripts -->
+	<script src="/assets/js/jquery.min.js"></script>
+	<script src="/assets/js/jquery.scrolly.min.js"></script>
+	<script src="/assets/js/jquery.scrollex.min.js"></script>
+	<script src="/assets/js/skel.min.js"></script>
+	<script src="/assets/js/util.js"></script>
+	<!--[if lte IE 8]><script src="/assets/js/ie/respond.min.js"></script><![endif]-->
+	<script src="/assets/js/main.js"></script>
+
+
+</body>
+
+</html>
