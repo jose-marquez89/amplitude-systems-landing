@@ -4,7 +4,7 @@ title: "5 Ways to Cut Your Microsoft Fabric Spend"
 author: "Jose Marquez"
 date: 2026-03-11
 tags: ['microsoft-fabric', 'cost-management']
-image: assets/images/flying-money.png
+image: assets/images/flying-money.jpg
 featured-alt-txt: "Money flying away into the wind"
 photo-credit: "perplexity.ai"
 comments: true

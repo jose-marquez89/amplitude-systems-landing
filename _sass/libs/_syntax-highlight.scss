@@ -1,0 +1,101 @@
+///
+/// Syntax highlighting theme for Rouge
+/// Dark theme matching site palette
+///
+
+.highlight {
+  background: _palette(border-bg);
+  border-radius: 4px;
+  font-size: 0.9em;
+  line-height: 1.5;
+  margin: 0 0 _size(element-margin) 0;
+  padding: 0.5em;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+
+  // Comments
+  .c, .cm, .cp, .c1, .ch {
+    color: #6a737d;
+    font-style: italic;
+  }
+
+  // Keywords
+  .k, .kn, .kp, .kr, .kt, .kv {
+    color: #f97583;
+  }
+
+  // Strings
+  .s, .sa, .sb, .sc, .sd, .s1, .s2, .se, .sh, .si, .sx, .sr, .ss {
+    color: #85e89d;
+  }
+
+  // Numbers
+  .m, .mb, .mf, .mh, .mi, .il, .mo {
+    color: #79b8ff;
+  }
+
+  // Names (functions, classes, etc.)
+  .n, .na, .nb, .bp, .nc, .no, .nd, .ni, .ne, .nf, .py, .nl, .nn, .nx {
+    color: #79b8ff;
+  }
+
+  // Attributes
+  .na {
+    color: #79b8ff;
+  }
+
+  // Operators
+  .o, .ow {
+    color: #f97583;
+  }
+
+  // Punctuation
+  .p, .pi, .pu {
+    color: _palette(fg);
+  }
+
+  // Markup tags
+  .nt, .tag {
+    color: #f97583;
+  }
+
+  // HTML attributes
+  .nb {
+    color: #79b8ff;
+  }
+
+  // Variable
+  .nv, .vc, .vg, .vi {
+    color: #79b8ff;
+  }
+
+  // Whitespace
+  .w {
+    color: _palette(fg);
+  }
+
+  // Error
+  .err {
+    color: #f97583;
+  }
+
+  // Line numbers styling (if used)
+  .lineno {
+    color: #6a737d;
+    display: inline-block;
+    padding: 0 0.5em;
+    user-select: none;
+  }
+
+  code {
+    background: none;
+    padding: 0;
+    margin: 0;
+    font-size: inherit;
+  }
+
+  pre {
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -148,6 +148,20 @@
 		padding: 0.25em 0.65em;
 	}
 
+	// Style code links to be distinguishable
+	a code {
+		border-bottom: none;
+		background: none;
+		background-size: 0;
+		color: _palette(highlight);
+		padding: 0.25em 0.2em;
+
+		&:hover {
+			background-size: 0;
+			color: lighten(_palette(highlight), 15);
+		}
+	}
+
 	pre {
 		-webkit-overflow-scrolling: touch;
 		font-family: _font(family-fixed);

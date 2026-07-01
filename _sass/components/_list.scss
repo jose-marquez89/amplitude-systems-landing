@@ -24,7 +24,38 @@
 		li {
 			padding-left: 0.5em;
 		}
+	}
 
+	// Remove bottom margin from nested lists
+	li > ul,
+	li > ol {
+		margin-bottom: 0;
+	}
+
+	// Different bullet styles for nested list levels
+	ul {
+		list-style: disc;
+
+		ul {
+			list-style: circle;
+
+			ul {
+				list-style: square;
+			}
+		}
+	}
+
+	ol {
+		ol {
+			list-style: lower-alpha;
+
+			ol {
+				list-style: lower-roman;
+			}
+		}
+	}
+
+	ul {
 		&.alt {
 			list-style: none;
 			padding-left: 0;
