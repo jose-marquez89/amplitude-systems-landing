@@ -27,7 +27,7 @@ Before getting started, you'll need a few things in addition to an empty Fabric 
 
 The complete code for this walkthrough is available in this [GitHub repo](https://github.com/jose-marquez89/fabric-duckrun-demo). Clone it and update the workspace and lakehouse GUIDs to match your environment:
 
-![Notebook image of GUID variables](assets/images/blog-post-images/duckrun-demo/lakehouse_guids.png)
+![Notebook image of GUID variables](/assets/images/blog-post-images/duckrun-demo/lakehouse_guids.png)
 
 ### Understanding dbt Structure
 
@@ -162,7 +162,7 @@ azcopy sync "./dbt" "$DBT_LAKEHOUSE_URL" \
 
 Your dbt directory is now ready to be accessed from a Fabric notebook:
 
-![A copied dbt directory in OneLake](assets/images/blog-post-images/duckrun-demo/dbt_in_duckrun_lakehouse.png)
+![A copied dbt directory in OneLake](/assets/images/blog-post-images/duckrun-demo/dbt_in_duckrun_lakehouse.png)
 
 ### Running dbt from Your Fabric Notebook
 
@@ -207,19 +207,19 @@ for r in res.result:
 
 With everything configured correctly and no SQL or test errors, your run completes successfully:
 
-![A successful duckrun](assets/images/blog-post-images/duckrun-demo/successful_duckrun.jpg)
+![A successful duckrun](/assets/images/blog-post-images/duckrun-demo/successful_duckrun.jpg)
 
 Your tables are now organized into the schemas you specified, ready for downstream analytics:
 
-![Tables landed in lakehouse by duckrun](assets/images/blog-post-images/duckrun-demo/duckrun_schema_tables.png)
+![Tables landed in lakehouse by duckrun](/assets/images/blog-post-images/duckrun-demo/duckrun_schema_tables.png)
 
 The file at `dbt/target/static_index.html` will be created, where you can access a lineage graph from within the dbt documentation interface:
 
-![dbt lineage graph](assets/images/blog-post-images/duckrun-demo/dbt_lineage_graph.png)
+![dbt lineage graph](/assets/images/blog-post-images/duckrun-demo/dbt_lineage_graph.png)
 
 Load these into a semantic model and visualize with your favorite BI tool:
 
-![A simple Power BI dashboard for collision data](assets/images/blog-post-images/duckrun-demo/collisions_dashboard.jpg)
+![A simple Power BI dashboard for collision data](/assets/images/blog-post-images/duckrun-demo/collisions_dashboard.jpg)
 
 ### Wrapping Up
 
